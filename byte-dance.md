@@ -8,86 +8,142 @@ leetcode上的企业题库，这里记录字节跳动的题库
 
 ## 二、中等题出现频率top100
 
-### 1、两数相加[**LinkedList当栈用**]
+### 2.1 双指针
 
-给你两个 非空 的链表，表示两个非负的整数。它们每位数字都是按照 逆序 的方式存储的，并且每个节点只能存储 一位 数字。
+#### 1、三数之和[双指针]
 
-请你将两个数相加，并以相同形式返回一个表示和的链表。
+leetcode 15 
 
-你可以假设除了数字 0 之外，这两个数都不会以 0 开头。
+> 给你一个包含 n 个整数的数组 nums，判断 nums 中是否存在三个元素 a，b，c ，使得 a + b + c = 0 ？请你找出所有和为 0 且不重复的三元组。
+>
+> 注意：答案中不可以包含重复的三元组。
 
-来源：力扣（LeetCode）
-链接：https://leetcode.cn/problems/add-two-numbers
-<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220909131413977.png" alt="image-20220909131413977" style="zoom: 33%;" />
+思路：双指针
 
-如果当前两个链表处相应的数字是n1、n2，进位为carry，则其对应的和的数字为（n1+n2+carry）mod 10，新的进位值是（n1+n2+carry）mod 10向下取整
+如何三个数使用双指针，肯定是遍历数组，==挑出一个数，其他两个数互为相反数==，`其他两个数的遍历使用双指针`
+
+<font color=red>在这之前</font>，要明白，双指针由于有快慢指针之分，或者方向指针之分，其中==方向指针一般适用于有序数组==
+
+<font color=red>这里，我们就需要使用方向指针</font>,即一个left指针，一个right指针。一般是在<font color=red>有序数组</font>上使用。
+
+所以我们`需要对数组排序`
+
+解释以下代码的三个逻辑
+
+1.`nums[left]+nums[right]==target`时，自然`res.add(Arrays.asList(nums[i],nums[left],nums[right]));`
+
+且在这个逻辑下，必须跳过`++left与left对应数组值相等的情况`,同理必须跳过`--right与right对应值相等的情况`
+
+2.在`nums[left]+nums[right]`小于`target`时左移，则`left++`，相反则`right--`
+
+3.很容易忘记的一点是，每次`遍历的第一个数如果和前一个数相同`，应该需要`跳过该数的逻辑以以去重`
 
 ```java
-/**
- * Definition for singly-linked list.
- * public class ListNode {
- *     int val;
- *     ListNode next;
- *     ListNode() {}
- *     ListNode(int val) { this.val = val; }
- *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
- * }
- */
 class Solution {
-    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
-      // 将链表化成list比较好处理
-      // LinkedList实现了栈和队列的操作方法 所以可以作为栈来使用
-       LinkedList<Integer> list1=buildList(l1);
-       LinkedList<Integer> list2=buildList(l2);
-      
-       List<ListNode> sumList=new ArrayList<>();
-      
-       int carry=0;
-      
-       // 在默写时这个条件可能不是很容易想出
-       // 其逻辑是 只要进位或者任意一个数对应位置有值 即可继续做加法 
-       while(!list1.isEmpty() || !list2.isEmpty()||carry!=0){
-         // 当作栈来使用
-         int x=list1.isEmpty()?0:list1.pop();
-         int y=list2.isEmpty()?0:list2.pop();
-         int sum=x+y+carry;
-         // 生成node
-         ListNode node=new ListNode(sum%10);
-         sumList.add(node);
-          
-         // carry
-         carry=sum/10;
-         
-       }
-      
-        // 重建list而已
-       for(int i=0;i+1<sumList.size();i++){
-            sumList.get(i).next=sumList.get(i+1);
+        public List<List<Integer>> threeSum(int[] nums) {
+            List<List<Integer>> res=new ArrayList<>();
+            if(null==nums||nums.length<3){
+                return res;
+            }
+
+            // 1、最基础的一步 先排序
+            int len=nums.length;
+            Arrays.sort(nums);
+
+            // 双指针
+            for(int i=0;i<len;i++){
+                // 去重第一步
+                if (i>0 && nums[i]==nums[i-1])
+                    continue;
+                int target=-nums[i];
+                // left开始是从i的下一个开始
+                int left=i+1;
+                int right=len-1;
+                while(right>left) {
+                    if (nums[left] + nums[right] == target) {
+                        res.add(Arrays.asList(nums[i], nums[left], nums[right]));
+                        // 这里跳过去重一定要有 以免重复
+                        while (left < right && nums[left] == nums[++left]) ;
+                        while (left < right && nums[right] == nums[--right]) ;
+                    }
+
+                    if (nums[left] + nums[right] > target) {
+                        right--;
+                    }
+
+                    if (nums[left] + nums[right] < target) {
+                        left++;
+                    }
+
+                }
+
+            }
+            
+            return res;
+
+        }
+    }
+```
+
+#### 2、盛最多水的容器[双指针]
+
+https://leetcode.cn/problems/container-with-most-water/
+
+双指针，其实也就是哪边比较小哪边移动
+
+```java
+class Solution {
+   public int maxArea(int[] height) {
+
+        int len = height.length;
+        int left=0;
+        int right=len-1;
+        int max=0;
+        while(left<right){
+            int tmp=(right-left)*Math.min(height[left],height[right]);
+            max=Math.max(max,tmp);
+            if(height[left]<height[right]){
+                left++;
+            }else{
+                right--;
+            }
+
         }
 
-        return sumList.get(0);
-       
-      
-      
+
+        return max;
+
     }
-  
-    private LinkedList<Integer> buildList(ListNode l){
-      LinkedList<Integer> res=new LinkedList<>();
-      if(l==null){
-        return res;
-      }
-      
-      while(l!=null){
-        res.add(l.val);
-        l=l.next;
-      }
-      return res;
-    }
-  
 }
 ```
 
-### 2、无重复字符的最长子串[滑动窗口]
+#### 3、删除排序链表中的重复元素II[***]
+
+#### 4、删除链表的倒数第N个节点[***]
+
+#### 5、最接近的三数之和[***]
+
+#### 6、实现strStr()[***]
+
+#### 7、两数之和II-输入有序数组[***]
+
+#### 8、四数之和[***]
+
+#### 9、轮转数组[***]
+
+#### 10、比较版本号[***]
+
+#### 11、环形链表II[***]
+
+#### 12、会议室II[***]
+
+
+
+
+
+### 2.2 滑动窗口
+
+#### 1、无重复字符的最长子串[滑动窗口]
 
 https://leetcode.cn/problems/longest-substring-without-repeating-characters/
 
@@ -133,7 +189,7 @@ class Solution {
 }
 ```
 
-### 3、长度最小的字数组[滑动窗口]
+#### 2、长度最小的字数组[滑动窗口]
 
 https://leetcode.cn/problems/minimum-size-subarray-sum/
 
@@ -144,7 +200,6 @@ https://leetcode.cn/problems/minimum-size-subarray-sum/
 <img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220909161419503.png" alt="image-20220909161419503" style="zoom:33%;" />
 
 ```java
-
 class Solution {
     public int minSubArrayLen(int target, int[] nums) {
         int left=0;
@@ -175,13 +230,135 @@ class Solution {
 
 ```
 
-### 4、最长回文子串[***]
+#### 3、替换后的最长重复字符
 
-### 4、最长回文子序列[***]
 
-### 4、最长公共子序列[***]
 
-### 5、LRU缓存[哈希表与双向链表]
+### 2.3 二分法
+
+#### 1、搜索旋转排序数组[二分法]
+
+https://leetcode.cn/problems/search-in-rotated-sorted-array/
+
+整数数组 nums 按升序排列，数组中的值 互不相同 。
+
+在传递给函数之前，nums 在预先未知的某个下标 k（0 <= k < nums.length）上进行了 旋转，使数组变为 [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]]（下标 从 0 开始 计数）。例如， [0,1,2,4,5,6,7] 在下标 3 处经旋转后可能变为 [4,5,6,7,0,1,2] 。
+
+给你 旋转后 的数组 nums 和一个整数 target ，如果 nums 中存在这个目标值 target ，则返回它的下标，否则返回 -1 。
+
+你必须设计一个时间复杂度为 O(log n) 的算法解决此问题。
+
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220910205016707.png" alt="image-20220910205016707" style="zoom:33%;" />
+
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220910204944957.png" alt="image-20220910204944957" style="zoom:33%;" />
+
+```java
+class Solution {
+    public int search(int[] nums, int target) {
+        int left=0,right=nums.length;
+        // 在左闭右开区间时right=数组的长
+        // 1、寻找拐点
+        // [left,right)
+        while(left<right){
+            // 中间点用这个表达式吧 不去加1
+            int mid=(right+left)/2;
+            if (nums[mid]>=nums[0]){
+                // 表示还在递增   拐点在右边
+                // 所以left+1 左闭 拐点一定在mid+1之后 含mid+1
+                left=mid+1;
+            }else{
+                // 小于的话right=mid 因为右开
+                right=mid;
+            }
+        }
+
+        // 2、 确定区间
+        if (target>=nums[0]){
+            // 在左区间
+            left=0;
+        }else{
+           
+            right=nums.length;
+        }
+
+        // 3. 查找
+        while(left<right){
+            // 中间点用这个表达式吧 不去加1
+            int mid=(right+left)/2;
+            if (nums[mid]>target){
+                // 表示在左边  把右指针移过来
+                right=mid;
+            }else if(nums[mid]<target){
+                // 表示在右边  把左指针移过来
+                left=mid+1;
+            }else{
+                return mid;
+            }
+        }
+
+        return -1;
+
+    }
+
+}
+```
+
+总结二分法的两个模板
+
+```java
+// [left,right)的情况
+//  初始化
+int left=0, right=size;
+while（left<right）{
+  int mid=(left+right)/2;
+  if (nums[mid]==target){
+    ...
+  }
+  if (nums[mid]<target){
+    // 说明在右边  left需要右移动  因为mid已经不可能了  所以要+1 而且left是闭的
+    left=mid+1；
+  }
+  
+  if (nums[mid]>target){
+    // 说明在左边 right需要左移动  因为mid已经不可能了  所以right=mid 因为right是开的
+    right=mid；
+  }
+}
+
+
+// [left,right]的情况
+//  初始化
+int left=0, right=size-1;
+while（left<=right）{
+  int mid=(left+right)/2;
+  if (nums[mid]==target){
+    ...
+  }
+  if (nums[mid]<target){
+    // 说明在右边  left需要右移动  因为mid已经不可能了  所以要+1 而且left是闭的
+    left=mid+1；
+  }
+  
+  if (nums[mid]>target){
+    // 说明在左边 right需要左移动  因为mid已经不可能了  所以right=mid-1 因为right是闭的
+    right=mid-1；
+  }
+}
+ 
+// 感觉第一种比较好
+```
+
+#### 2、在排序数组中查找元素的第一个和最后一个位置[***]
+
+#### 3、寻找峰值[***]
+
+#### 4、长度最小的子数组[***]
+
+
+
+### 2.4 数据结构
+
+#### 1、LRU缓存[哈希表与双向链表]
 
 https://leetcode.cn/problems/lru-cache/
 
@@ -327,328 +504,7 @@ class LRUCache {
 
 ```
 
-### 6、三数之和[双指针]
-
-leetcode 15 
-
-> 给你一个包含 n 个整数的数组 nums，判断 nums 中是否存在三个元素 a，b，c ，使得 a + b + c = 0 ？请你找出所有和为 0 且不重复的三元组。
->
-> 注意：答案中不可以包含重复的三元组。
-
-思路：双指针
-
-如何三个数使用双指针，肯定是遍历数组，==挑出一个数，其他两个数互为相反数==，`其他两个数的遍历使用双指针`
-
-<font color=red>在这之前</font>，要明白，双指针由于有快慢指针之分，或者方向指针之分，其中==方向指针一般适用于有序数组==
-
-<font color=red>这里，我们就需要使用方向指针</font>,即一个left指针，一个right指针。一般是在<font color=red>有序数组</font>上使用。
-
-所以我们`需要对数组排序`
-
-解释以下代码的三个逻辑
-
-1.`nums[left]+nums[right]==target`时，自然`res.add(Arrays.asList(nums[i],nums[left],nums[right]));`
-
-且在这个逻辑下，必须跳过`++left与left对应数组值相等的情况`,同理必须跳过`--right与right对应值相等的情况`
-
-2.在`nums[left]+nums[right]`小于`target`时左移，则`left++`，相反则`right--`
-
-3.很容易忘记的一点是，每次`遍历的第一个数如果和前一个数相同`，应该需要`跳过该数的逻辑以以去重`
-
-```java
-class Solution {
-        public List<List<Integer>> threeSum(int[] nums) {
-            List<List<Integer>> res=new ArrayList<>();
-            if(null==nums||nums.length<3){
-                return res;
-            }
-
-            // 1、最基础的一步 先排序
-            int len=nums.length;
-            Arrays.sort(nums);
-
-            // 双指针
-            for(int i=0;i<len;i++){
-                // 去重第一步
-                if (i>0 && nums[i]==nums[i-1])
-                    continue;
-                int target=-nums[i];
-                // left开始是从i的下一个开始
-                int left=i+1;
-                int right=len-1;
-                while(right>left) {
-                    if (nums[left] + nums[right] == target) {
-                        res.add(Arrays.asList(nums[i], nums[left], nums[right]));
-                        // 这里跳过去重一定要有 以免重复
-                        while (left < right && nums[left] == nums[++left]) ;
-                        while (left < right && nums[right] == nums[--right]) ;
-                    }
-
-                    if (nums[left] + nums[right] > target) {
-                        right--;
-                    }
-
-                    if (nums[left] + nums[right] < target) {
-                        left++;
-                    }
-
-                }
-
-            }
-            
-            return res;
-
-        }
-    }
-```
-
-### 7、盛最多水的容器[双指针]
-
-https://leetcode.cn/problems/container-with-most-water/
-
-双指针，其实也就是哪边比较小哪边移动
-
-```java
-class Solution {
-   public int maxArea(int[] height) {
-
-        int len = height.length;
-        int left=0;
-        int right=len-1;
-        int max=0;
-        while(left<right){
-            int tmp=(right-left)*Math.min(height[left],height[right]);
-            max=Math.max(max,tmp);
-            if(height[left]<height[right]){
-                left++;
-            }else{
-                right--;
-            }
-
-        }
-
-
-        return max;
-
-    }
-}
-```
-
-### 8、下一排列[***]
-
-### 9、最大子数组和[坐标型动态规划]
-
-https://leetcode.cn/problems/maximum-subarray/
-
-给你一个整数数组 `nums` ，请你找出一个具有最大和的连续子数组（子数组最少包含一个元素），返回其最大和。
-
-**子数组** 是数组中的一个连续部分。
-
-设f[i]为结尾的连续子数组的最大和
-
-这是个坐标型动态规划
-
-```java
-class Solution {
-    public int maxSubArray(int[] nums) {
-
-        // 肯定用动态规划
-        // 最困难的是确定状态：我们应该以f[i]表示以对应位置的数结尾的子数组的最大值
-
-        int len =nums.length;
-        if(len==1){
-            return nums[0];
-        }
-
-        int [] f=new int [len];
-        f[0]=nums[0];
-        int max=f[0];
-        for(int i=1;i<len;i++){
-            if(f[i-1]>0){
-                f[i]=f[i-1]+nums[i];
-            }else{
-                f[i]=nums[i];
-            }
-            max=max>f[i]?max:f[i];
-        }
-
-        return max;
-    }
-}
-```
-
-### 10、合并区间[扫描线]
-
-https://leetcode.cn/problems/merge-intervals/
-
-以数组 intervals 表示若干个区间的集合，其中单个区间为 intervals[i] = [starti, endi] 。请你合并所有重叠的区间，并返回 一个不重叠的区间数组，该数组需恰好覆盖输入中的所有区间 。
-
-<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220910202745504.png" alt="image-20220910202745504" style="zoom:33%;" />
-
-```java
-class Solution {
-     public int[][] merge(int[][] intervals) {
-            // 这种不会不知道吧
-            Arrays.sort(intervals, (o1, o2) -> o1[0]-o2[0]);
-            List<List<Integer>> res=new ArrayList<>();
-            int len=intervals.length;
-            int start=intervals[0][0];
-            int end=intervals[0][1];
-            boolean isOverlapp=false;
-            for (int i=1;i<len;i++){
-                int[] interval = intervals[i];
-                // [1,3] [2,6]
-                // 相交 或者 包含
-                if (interval[0]<=end ){
-                    end=Math.max(end,interval[1]);
-                    // 表示当前是重叠的
-                    isOverlapp=true;
-                }else{
-                    // 隔离
-                    // 收集非重叠区间
-                    // 并重置start end
-                    res.add(Arrays.asList(start,end));
-                    // 表示当前非重叠
-                    isOverlapp=false;
-                    start=interval[0];
-                    end=interval[1];
-                }
-            }
-
-            // 因为出现下一个才会处理以上的  所以最后还是要处理最后一个
-            if (!isOverlapp){
-                res.add(Arrays.asList(intervals[len-1][0],intervals[len-1][1]));
-            }else{
-                res.add(Arrays.asList(start,end));
-            }
-
-            int [][] result=new int[res.size()][2];
-            for (int i=0;i<res.size();i++){
-                result[i][0]=res.get(i).get(0);
-                result[i][1]=res.get(i).get(1);
-            }
-
-
-            return result;
-        }
-}
-```
-
-### 11、搜索旋转排序数组[二分法]
-
-https://leetcode.cn/problems/search-in-rotated-sorted-array/
-
-整数数组 nums 按升序排列，数组中的值 互不相同 。
-
-在传递给函数之前，nums 在预先未知的某个下标 k（0 <= k < nums.length）上进行了 旋转，使数组变为 [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]]（下标 从 0 开始 计数）。例如， [0,1,2,4,5,6,7] 在下标 3 处经旋转后可能变为 [4,5,6,7,0,1,2] 。
-
-给你 旋转后 的数组 nums 和一个整数 target ，如果 nums 中存在这个目标值 target ，则返回它的下标，否则返回 -1 。
-
-你必须设计一个时间复杂度为 O(log n) 的算法解决此问题。
-
-<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220910205016707.png" alt="image-20220910205016707" style="zoom:33%;" />
-
-<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220910204944957.png" alt="image-20220910204944957" style="zoom:33%;" />
-
-```java
-class Solution {
-    public int search(int[] nums, int target) {
-        int left=0,right=nums.length;
-        // 在左闭右开区间时right=数组的长
-        // 1、寻找拐点
-        // [left,right)
-        while(left<right){
-            // 中间点用这个表达式吧 不去加1
-            int mid=(right+left)/2;
-            if (nums[mid]>=nums[0]){
-                // 表示还在递增   拐点在右边
-                // 所以left+1 左闭 拐点一定在mid+1之后 含mid+1
-                left=mid+1;
-            }else{
-                // 小于的话right=mid 因为右开
-                right=mid;
-            }
-        }
-
-        // 2、 确定区间
-        if (target>=nums[0]){
-            // 在左区间
-            left=0;
-        }else{
-           
-            right=nums.length;
-        }
-
-        // 3. 查找
-        while(left<right){
-            // 中间点用这个表达式吧 不去加1
-            int mid=(right+left)/2;
-            if (nums[mid]>target){
-                // 表示在左边  把右指针移过来
-                right=mid;
-            }else if(nums[mid]<target){
-                // 表示在右边  把左指针移过来
-                left=mid+1;
-            }else{
-                return mid;
-            }
-        }
-
-        return -1;
-
-    }
-
-}
-```
-
-总结二分法的两个模板
-
-```java
-// [left,right)的情况
-//  初始化
-int left=0, right=size;
-while（left<right）{
-  int mid=(left+right)/2;
-  if (nums[mid]==target){
-    ...
-  }
-  if (nums[mid]<target){
-    // 说明在右边  left需要右移动  因为mid已经不可能了  所以要+1 而且left是闭的
-    left=mid+1；
-  }
-  
-  if (nums[mid]>target){
-    // 说明在左边 right需要左移动  因为mid已经不可能了  所以right=mid 因为right是开的
-    right=mid；
-  }
-}
-
-
-// [left,right]的情况
-//  初始化
-int left=0, right=size-1;
-while（left<=right）{
-  int mid=(left+right)/2;
-  if (nums[mid]==target){
-    ...
-  }
-  if (nums[mid]<target){
-    // 说明在右边  left需要右移动  因为mid已经不可能了  所以要+1 而且left是闭的
-    left=mid+1；
-  }
-  
-  if (nums[mid]>target){
-    // 说明在左边 right需要左移动  因为mid已经不可能了  所以right=mid-1 因为right是闭的
-    right=mid-1；
-  }
-}
- 
-// 感觉第一种比较好
-```
-
-### 12、重排链表[***]
-
-### 13、数组中的第k个最大元素[最小堆]
+#### 2、数组中的第k个最大元素[最小堆]
 
 https://leetcode.cn/problems/kth-largest-element-in-an-array
 
@@ -683,39 +539,96 @@ class Solution {
 
 始终拿到最小堆的元素去比较
 
-### 14、岛屿数量[***]
+#### 3、 反转链表II[***]
 
-### 15、整数反转[按位转换、数学]
+https://leetcode.cn/problems/reverse-linked-list-ii/
 
-https://leetcode.cn/problems/reverse-integer/
+给你单链表的头指针 head 和两个整数 left 和 right ，其中 left <= right 。请你反转从位置 left 到位置 right 的链表节点，返回 反转后的链表 。
 
-给你一个 32 位的有符号整数 x ，返回将 x 中的数字部分反转后的结果。
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220911225410970.png" alt="image-20220911225410970" style="zoom:33%;" />
 
-如果反转后整数超过 32 位的有符号整数的范围 [−2^31,  2^31 − 1] ，就返回 0。
+#### 4、最长连续序列[***]
 
-假设环境不允许存储 64 位整数（有符号或无符号）。
+https://leetcode.cn/problems/longest-consecutive-sequence/
+
+给定一个未排序的整数数组 nums ，找出数字连续的最长序列（不要求序列元素在原数组中连续）的长度。
+
+请你设计并实现时间复杂度为 O(n) 的算法解决此问题。
+
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220911232042324.png" alt="image-20220911232042324" style="zoom:33%;" />
+
+#### 5、排序链表[***]
+
+#### 6、二叉树的最近公共祖先[***]
+
+#### 7、从前序和中序遍历序列构造二叉树[***]
+
+#### 8、不同的二叉搜索树[***]
+
+#### 9、两两交换链表中的节点[***]
+
+#### 10、字符串解码[***]
+
+#### 11、每日温度[***]
+
+#### 12、字符串转整数[***]
+
+#### 13、两数相加II[***]
+
+#### 14、最小栈[***]
+
+#### 15、复制带随机指针的链表[***]
+
+#### 16、简化路径[***]
+
+#### 17、排序数组[***]
+
+#### 18、树的子结构[***]
+
+#### 19、二叉搜索树与双向链表[***]
+
+
+
+
+
+
+
+### 2.5 方向数组
+
+#### 1、螺旋矩阵[方向数组]
+
+https://leetcode.cn/problems/spiral-matrix/
+
+给你一个 `m` 行 `n` 列的矩阵 `matrix` ，请按照 **顺时针螺旋顺序** ，返回矩阵中的所有元素。
 
 ```java
 class Solution {
-   public int reverse(int x) {
+    public List<Integer> spiralOrder(int[][] matrix) {
 
-        // res计作反转后的数字
-        int res=0;
-        // 12345
-        // 5    1234
 
-        // 重复弹出x的末尾数字
-        while(x!=0){
-            int digit=x%10;
-            // 这里得先把异常给过滤掉 因为后面有乘以10的操作
-            // 要么res*10大于  要么res*10+末尾>7 因为Integer.MAX_VALUE=2147483647
-            if (res > Integer.MAX_VALUE / 10 || (res == Integer.MAX_VALUE / 10 && digit > 7))
-                return 0;
-            if (res < Integer.MIN_VALUE / 10 || (res == Integer.MIN_VALUE / 10 && digit < -8))
-                return 0;
-            // 余数越靠前得出  乘以的10越多 所以有以下
-            res=res*10+digit;
-            x/=10;
+
+        List<Integer> res=new ArrayList<>();
+        int m=matrix.length;
+        int n=matrix[0].length;
+        boolean [][] visited=new boolean[m][n];
+
+        int [] dx={0,1,0,-1};
+        int [] dy={1,0,-1,0};
+
+        int x=0,y=0,dir=0;
+        for(int i=0;i<m*n; i++){
+            res.add(matrix[x][y]);
+            visited[x][y]=true;
+
+            // 先判断一下是否合法
+            int  xtmp=x+dx[dir], ytmp=y+dy[dir];
+            if(xtmp<0 ||xtmp>=m || ytmp<0 || ytmp>=n ||visited[xtmp][ytmp]){
+                // 确定方向
+                dir=(dir+1)%4;
+            }
+
+            x+=dx[dir];
+            y+=dy[dir];
 
         }
 
@@ -725,7 +638,54 @@ class Solution {
 }
 ```
 
-### 16、二叉树的右视图[BFS]
+#### 1、螺旋矩阵II[方向数组]
+
+给你一个正整数 `n` ，生成一个包含 `1` 到 `n2` 所有元素，且元素按顺时针顺序螺旋排列的 `n x n` 正方形矩阵 `matrix` 。
+
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220911041050154.png" alt="image-20220911041050154" style="zoom:33%;" />
+
+逻辑是一样的其实
+
+```java
+class Solution {
+    public int[][] generateMatrix(int n) {
+
+        // 遍历n2 按照dx dy方向去遍历
+        int[][] res=new int[n][n];
+        boolean[][] visited=new boolean[n][n];
+
+        int [] dx={0,1,0,-1};
+        int [] dy={1,0,-1,0};
+        int dir=0;
+
+        int x=0,y=0;
+        // 计算坐标的位置及其值的关系
+        // 初始化
+        res[0][0]=1;
+        visited[0][0]=true;
+        for (int i=2;i<=n*n;i++){
+            int a=x+dx[dir];
+            int b=y+dy[dir];
+            if(a<0 || a>=n ||b<0|| b>=n ||visited[a][b]){
+                // 换下一个方位
+                dir=(dir+1)%4;
+            }
+            x+=dx[dir];
+            y+=dy[dir];
+            res[x][y]=i;
+            visited[x][y]=true;
+        }
+
+        return res;
+    }
+}
+```
+
+### 
+
+### 2.6 层序遍历
+
+#### 1、二叉树的右视图[BFS]
 
 给定一个二叉树的 **根节点** `root`，想象自己站在它的右侧，按照从顶部到底部的顺序，返回从右侧所能看到的节点值。
 
@@ -793,44 +753,371 @@ class Solution {
 }
 ```
 
-### 17、括号生成[***回溯]
+#### 2、二叉树的锯齿形层序遍历[层序遍历]
 
-### 18、复原ip地址[***回溯]
+给你二叉树的根节点 `root` ，返回其节点值的 **锯齿形层序遍历** 。（即先从左往右，再从右往左进行下一层遍历，以此类推，层与层之间交替进行）。
 
-### 19、螺旋矩阵[方向数组]
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220911222524940.png" alt="image-20220911222524940" style="zoom:33%;" />
 
-https://leetcode.cn/problems/spiral-matrix/
+```java
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    private List<List<Integer>> res = new ArrayList<>();
 
-给你一个 `m` 行 `n` 列的矩阵 `matrix` ，请按照 **顺时针螺旋顺序** ，返回矩阵中的所有元素。
+
+    public List<List<Integer>> zigzagLevelOrder(TreeNode root) {
+        List<List<Integer>> result=new ArrayList<>();
+        bfs(root);
+        for (int i=0;i<res.size();i++){
+            List<Integer> list = res.get(i);
+            if (i%2==0){
+                result.add(list);
+            }else{
+                result.add(reverseList(list));
+            }
+        }
+        
+        return result;
+    }
+
+
+    private List<Integer> reverseList(List<Integer> list){
+        List<Integer> result=new ArrayList<>();
+        for (int i=list.size()-1;i>=0;i--){
+            result.add(list.get(i));
+        }
+        return result;
+    }
+    
+    private void bfs(TreeNode root) {
+        if (root == null) {
+            return;
+        }
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.add(root);
+
+        while (!queue.isEmpty()) {
+            List<Integer> tmp = new ArrayList<>();
+            // 记录了此时需要弹出长度
+            int len = queue.size();
+            while (len != 0) {
+                TreeNode node = queue.poll();
+                tmp.add(node.val);
+                len--;
+
+                // 收集
+                if (node.left != null) {
+                    queue.offer(node.left);
+                }
+
+                if (node.right != null) {
+                    queue.offer(node.right);
+                }
+
+            }
+
+            res.add(tmp);
+
+
+        }
+
+    }
+}
+```
+
+### 
+
+### 2.7 回溯与深度优先搜索
+
+#### 1、括号生成[***回溯]
+
+#### 2、复原ip地址[***回溯]
+
+#### 3、单词搜索[***]
+
+#### 4、子集[***]
+
+#### 5、电话号码的字母组合[***]
+
+#### 6、路径总和II[***]
+
+#### 7、验证二叉搜索数[***]
+
+#### 8、组合总和[***]
+
+#### 9、字典序排数[***]
+
+#### 10、课程表[***]
+
+
+
+
+
+### 2.8 动态规划
+
+#### 1、最大子数组和[坐标型动态规划]
+
+https://leetcode.cn/problems/maximum-subarray/
+
+给你一个整数数组 `nums` ，请你找出一个具有最大和的连续子数组（子数组最少包含一个元素），返回其最大和。
+
+**子数组** 是数组中的一个连续部分。
+
+设f[i]为结尾的连续子数组的最大和
+
+这是个坐标型动态规划
 
 ```java
 class Solution {
-    public List<Integer> spiralOrder(int[][] matrix) {
+    public int maxSubArray(int[] nums) {
 
+        // 肯定用动态规划
+        // 最困难的是确定状态：我们应该以f[i]表示以对应位置的数结尾的子数组的最大值
 
+        int len =nums.length;
+        if(len==1){
+            return nums[0];
+        }
 
-        List<Integer> res=new ArrayList<>();
-        int m=matrix.length;
-        int n=matrix[0].length;
-        boolean [][] visited=new boolean[m][n];
-
-        int [] dx={0,1,0,-1};
-        int [] dy={1,0,-1,0};
-
-        int x=0,y=0,dir=0;
-        for(int i=0;i<m*n; i++){
-            res.add(matrix[x][y]);
-            visited[x][y]=true;
-
-            // 先判断一下是否合法
-            int  xtmp=x+dx[dir], ytmp=y+dy[dir];
-            if(xtmp<0 ||xtmp>=m || ytmp<0 || ytmp>=n ||visited[xtmp][ytmp]){
-                // 确定方向
-                dir=(dir+1)%4;
+        int [] f=new int [len];
+        f[0]=nums[0];
+        int max=f[0];
+        for(int i=1;i<len;i++){
+            if(f[i-1]>0){
+                f[i]=f[i-1]+nums[i];
+            }else{
+                f[i]=nums[i];
             }
+            max=max>f[i]?max:f[i];
+        }
 
-            x+=dx[dir];
-            y+=dy[dir];
+        return max;
+    }
+}
+```
+
+#### 2、最长递增子序列[划分型动态规划]
+
+==注意这里不要求连续==
+
+==注意这里不要求连续==
+
+==注意这里不要求连续==
+
+https://leetcode.cn/problems/longest-increasing-subsequence
+
+给你一个整数数组 nums ，找到其中最长严格递增子序列的长度。
+
+子序列 是由数组派生而来的序列，删除（或不删除）数组中的元素而不改变其余元素的顺序。例如，[3,6,2,7] 是数组 [0,3,1,6,2,2,7] 的子序列。
+
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220911233114533.png" alt="image-20220911233114533" style="zoom:33%;" />
+
+```java
+class Solution {
+    public int lengthOfLIS(int[] nums) {
+        int n=nums.length;
+        // f[i]考虑前i个元素，并以第i个为结尾的子序列的最大长度
+        // 它与第i-1个的关系不大
+        // 与前j个的关系很大，但是不知道怎么描述
+        //  不知道就枚举
+        // f[i]=max(f[j])+1  0=<j<i;且，nums[i]>nums[j]
+        if(n==1){
+            return 1;
+        }
+        int [] f=new int[n];
+        f[0]=1;
+        int res=1;
+        for(int i=1;i<n;i++){
+            f[i]=1;
+            for(int j=0;j<i;j++){
+                if(nums[j]<nums[i]){
+                    f[i]=Math.max(f[j]+1,f[i]); 
+                }
+               
+            }
+             res=Math.max(res,f[i]);
+           
+        }
+        return res;
+
+    }
+}  
+```
+
+#### 3、打家劫舍[***]
+
+#### 4、打家劫舍II[***]
+
+#### 5、打家劫舍III[***]
+
+#### 6、零钱兑换[***]
+
+#### 7、跳跃游戏II[***]
+
+#### 8、最大正方形[***]
+
+#### 9、跳跃游戏[***]
+
+#### 10、最小路径和[***]
+
+#### 11、买卖股票的最佳时机 II[***]
+
+#### 12、买卖股票的最佳时机含冷冻期[***]
+
+#### 13、单词拆分[***]
+
+#### 14、乘积最大子数组[***]
+
+#### 15、最长公共子序列[***]
+
+#### 16、机器人的运动范围[***]
+
+#### 17、完全平方数[***]
+
+#### 18、最长重复子数组[***]
+
+#### 19、解码方法[***]
+
+#### 20、不同路径[***]
+
+#### 21、整数拆分[***]
+
+
+
+
+
+
+
+
+
+
+
+### 2.9 数学
+
+#### 1、两数相加[**LinkedList当栈用**]
+
+给你两个 非空 的链表，表示两个非负的整数。它们每位数字都是按照 逆序 的方式存储的，并且每个节点只能存储 一位 数字。
+
+请你将两个数相加，并以相同形式返回一个表示和的链表。
+
+你可以假设除了数字 0 之外，这两个数都不会以 0 开头。
+
+来源：力扣（LeetCode）
+链接：https://leetcode.cn/problems/add-two-numbers
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220909131413977.png" alt="image-20220909131413977" style="zoom: 33%;" />
+
+如果当前两个链表处相应的数字是n1、n2，进位为carry，则其对应的和的数字为（n1+n2+carry）mod 10，新的进位值是（n1+n2+carry）mod 10向下取整
+
+```java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+      // 将链表化成list比较好处理
+      // LinkedList实现了栈和队列的操作方法 所以可以作为栈来使用
+       LinkedList<Integer> list1=buildList(l1);
+       LinkedList<Integer> list2=buildList(l2);
+      
+       List<ListNode> sumList=new ArrayList<>();
+      
+       int carry=0;
+      
+       // 在默写时这个条件可能不是很容易想出
+       // 其逻辑是 只要进位或者任意一个数对应位置有值 即可继续做加法 
+       while(!list1.isEmpty() || !list2.isEmpty()||carry!=0){
+         // 当作栈来使用
+         int x=list1.isEmpty()?0:list1.pop();
+         int y=list2.isEmpty()?0:list2.pop();
+         int sum=x+y+carry;
+         // 生成node
+         ListNode node=new ListNode(sum%10);
+         sumList.add(node);
+          
+         // carry
+         carry=sum/10;
+         
+       }
+      
+        // 重建list而已
+       for(int i=0;i+1<sumList.size();i++){
+            sumList.get(i).next=sumList.get(i+1);
+        }
+
+        return sumList.get(0);
+       
+      
+      
+    }
+  
+    private LinkedList<Integer> buildList(ListNode l){
+      LinkedList<Integer> res=new LinkedList<>();
+      if(l==null){
+        return res;
+      }
+      
+      while(l!=null){
+        res.add(l.val);
+        l=l.next;
+      }
+      return res;
+    }
+  
+}
+```
+
+#### 2、整数反转[按位转换、数学]
+
+https://leetcode.cn/problems/reverse-integer/
+
+给你一个 32 位的有符号整数 x ，返回将 x 中的数字部分反转后的结果。
+
+如果反转后整数超过 32 位的有符号整数的范围 [−2^31,  2^31 − 1] ，就返回 0。
+
+假设环境不允许存储 64 位整数（有符号或无符号）。
+
+```java
+class Solution {
+   public int reverse(int x) {
+
+        // res计作反转后的数字
+        int res=0;
+        // 12345
+        // 5    1234
+
+        // 重复弹出x的末尾数字
+        while(x!=0){
+            int digit=x%10;
+            // 这里得先把异常给过滤掉 因为后面有乘以10的操作
+            // 要么res*10大于  要么res*10+末尾>7 因为Integer.MAX_VALUE=2147483647
+            if (res > Integer.MAX_VALUE / 10 || (res == Integer.MAX_VALUE / 10 && digit > 7))
+                return 0;
+            if (res < Integer.MIN_VALUE / 10 || (res == Integer.MIN_VALUE / 10 && digit < -8))
+                return 0;
+            // 余数越靠前得出  乘以的10越多 所以有以下
+            res=res*10+digit;
+            x/=10;
 
         }
 
@@ -840,11 +1127,126 @@ class Solution {
 }
 ```
 
-### 19、螺旋矩阵II[方向数组]
+#### 3、字符串相乘[***]
 
-给你一个正整数 `n` ，生成一个包含 `1` 到 `n2` 所有元素，且元素按顺时针顺序螺旋排列的 `n x n` 正方形矩阵 `matrix` 。
+#### 4、用rand7()实现rand10()[***]
 
-<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220911041050154.png" alt="image-20220911041050154" style="zoom:33%;" />
+#### 5、旋转图像[***]
+
+#### 6、Pow(x,n)[***]
+
+
+
+### 2.10 贪心
+
+#### 1、加油站[***]
+
+#### 2、移掉k位数字[***]
+
+
+
+### 2.11 分治
+
+#### 1、搜索二维矩阵II[***]
+
+### 2、最大数[***]
+
+#### 3、二维数组中的查找[***]
+
+
+
+### 2.11 其他
+
+#### 1、合并区间[扫描线]
+
+https://leetcode.cn/problems/merge-intervals/
+
+以数组 intervals 表示若干个区间的集合，其中单个区间为 intervals[i] = [starti, endi] 。请你合并所有重叠的区间，并返回 一个不重叠的区间数组，该数组需恰好覆盖输入中的所有区间 。
+
+<img src="/Users/dexlace/private-github-repository/leetcode-coding/byte-dance.assets/image-20220910202745504.png" alt="image-20220910202745504" style="zoom:33%;" />
+
+```java
+class Solution {
+     public int[][] merge(int[][] intervals) {
+            // 这种不会不知道吧
+            Arrays.sort(intervals, (o1, o2) -> o1[0]-o2[0]);
+            List<List<Integer>> res=new ArrayList<>();
+            int len=intervals.length;
+            int start=intervals[0][0];
+            int end=intervals[0][1];
+            boolean isOverlapp=false;
+            for (int i=1;i<len;i++){
+                int[] interval = intervals[i];
+                // [1,3] [2,6]
+                // 相交 或者 包含
+                if (interval[0]<=end ){
+                    end=Math.max(end,interval[1]);
+                    // 表示当前是重叠的
+                    isOverlapp=true;
+                }else{
+                    // 隔离
+                    // 收集非重叠区间
+                    // 并重置start end
+                    res.add(Arrays.asList(start,end));
+                    // 表示当前非重叠
+                    isOverlapp=false;
+                    start=interval[0];
+                    end=interval[1];
+                }
+            }
+
+            // 因为出现下一个才会处理以上的  所以最后还是要处理最后一个
+            if (!isOverlapp){
+                res.add(Arrays.asList(intervals[len-1][0],intervals[len-1][1]));
+            }else{
+                res.add(Arrays.asList(start,end));
+            }
+
+            int [][] result=new int[res.size()][2];
+            for (int i=0;i<res.size();i++){
+                result[i][0]=res.get(i).get(0);
+                result[i][1]=res.get(i).get(1);
+            }
+
+
+            return result;
+        }
+}
+```
+
+### 
+
+### 4、最长回文子串[***]
+
+### 4、最长回文子序列[***]
+
+### 4、最长公共子序列[***]
+
+### 8、下一排列[***]
+
+### 9、全排列[***]
+
+### 12、重排链表[***]
+
+### 14、岛屿数量[***]
+
+### 15、Z 字形变换[***]
+
+### 16、前k个高频元素[***]
+
+### 17、岛屿的最大面积[***]
+
+### 18、和为k的子数组[***]
+
+
+
+### 
+
+
+
+### 
+
+
 
 
 
